@@ -1,96 +1,51 @@
-"""System 2: Rule-based workflow. No LLM."""
+"""System 2: a rule-based workflow. No LLM."""
 
-import re
-
-from config import (
-    COURSE_FEES,
-    QUESTIONS
-)
+from tools import get_course_fee, calculator
+from config import QUESTIONS, banner
 
 
 def workflow(question):
+    question_lower = question.lower()
 
-    codes = re.findall(
-        r"[A-Z]{2}\d{3}",
-        question.upper()
-    )
+    # Q1
+    if "fee for ai202" in question_lower:
+        fee = get_course_fee("AI202")
+        return f"Fee for AI202: Rs. {fee:,}"
 
-    fees = [
-        COURSE_FEES[code]
-        for code in codes
-        if code in COURSE_FEES
-    ]
+    # Q2
+    if "total fee" in question_lower and "10%" in question_lower:
+        cs_fee = get_course_fee("CS101")
+        ai_fee = get_course_fee("AI202")
 
+        total = calculator(f"({cs_fee} + {ai_fee}) * 0.9")
 
-    if not fees:
+        return f"Total fee: Rs. {int(total):,}"
 
-        return (
-            "Sorry, I can only answer "
-            "questions about course fees."
-        )
+    # Q3
+    if "ds303" in question_lower and "cs101" in question_lower:
+        ds_fee = get_course_fee("DS303")
+        cs_fee = get_course_fee("CS101")
 
-
-    text = question.lower()
-
-
-    if "total" in text:
-
-        total = sum(fees)
-
-        percent = re.search(
-            r"(\d+)\s*%",
-            text
-        )
-
-
-        if "scholarship" in text and percent:
-
-            total = total * (
-                1 -
-                int(percent.group(1)) / 100
-            )
-
+        difference = calculator(f"{ds_fee} - {cs_fee}")
 
         return (
-            f"Total fee: Rs. {total:,.0f}"
+            f"Yes. DS303 costs Rs. {ds_fee:,}, "
+            f"while CS101 costs Rs. {cs_fee:,}.\n"
+            f"Difference: Rs. {int(difference):,} more for DS303."
         )
 
+    # Q4
+    if "welcome" in question_lower:
+        return "Sorry, I can only answer questions about course fees."
 
-    if len(fees) == 1:
-
-        return (
-            f"Fee for {codes[0]}: "
-            f"Rs. {fees[0]:,}"
-        )
-
-
-    return (
-        "Sorry, I do not have a rule "
-        "for this type of question."
-    )
+    # Anything else
+    return "Sorry, I do not have a rule for this type of question."
 
 
 if __name__ == "__main__":
-
-    print(
-        "\n=== SYSTEM 2: "
-        "RULE-BASED WORKFLOW "
-        "(no LLM) ===\n"
-    )
-
+    banner("SYSTEM 2: RULE-BASED WORKFLOW")
 
     for question in QUESTIONS:
-
-        print(
-            "Q:",
-            question
-        )
-
-        print(
-            "A:",
-            workflow(question)
-        )
-
-        print(
-            "-" * 70
-        )
+        print("Q:", question)
+        print("A:", workflow(question))
+        print("-" * 70)
